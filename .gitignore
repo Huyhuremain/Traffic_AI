@@ -1,0 +1,17 @@
+# Môi trường ảo (Tuyệt đối không đẩy lên vì nó rất nặng và chỉ chạy được trên máy bạn)
+venv/
+env/
+
+# Các file mô hình AI (Nên để người dùng tự tải hoặc lưu chỗ khác vì GitHub giới hạn dung lượng file)
+*.pt
+weights/
+
+# Các file dữ liệu tự sinh ra khi chạy code
+results/
+data/images/
+data/videos/
+__pycache__/
+
+# File cấu hình hệ thống
+.DS_Store
+.vscode/
