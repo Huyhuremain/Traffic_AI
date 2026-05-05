@@ -1,4 +1,5 @@
 #.\venv\Scripts\activate
+#streamlit run src/5_app_dashboard.py
 import cv2
 import os
 
