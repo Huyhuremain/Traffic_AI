@@ -30,13 +30,14 @@ def main():
     # Bắt đầu quá trình học
     results = model.train(
         data=data_yaml_path,
-        epochs=50,              # Số vòng học (Đồ án sinh viên để 50 - 100 là đẹp)
-        imgsz=640,              # Kích thước ảnh chuẩn của YOLO
-        batch=8,                # Số ảnh đưa vào RAM 1 lúc (Nếu máy yếu/báo lỗi Out of Memory thì giảm xuống 4)
-        project='results',      # Thư mục chính lưu kết quả
-        name='traffic_model',   # Tên thư mục con lưu lần chạy này
-        plots=True,             # Tự động vẽ các biểu đồ đánh giá (Loss, mAP) để cho vào báo cáo
-        device=''               # Để trống: Hệ thống tự động chọn Card màn hình (GPU) nếu có, không thì chạy CPU
+        epochs=50,
+        imgsz=640,
+        batch=4,                # ✅ GIẢM TỪ 8 XUỐNG 4 (Để tiết kiệm RAM)
+        workers=1,              # ✅ THÊM DÒNG NÀY: Chặn YOLO tạo ra hàng chục luồng ngốn RAM
+        project='results',
+        name='traffic_model',
+        plots=True,
+        device=''
     )
 
     # ==========================================

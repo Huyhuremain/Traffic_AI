@@ -1,12 +1,19 @@
 import pandas as pd
 import numpy as np
+
+# ✅ THÊM 2 DÒNG NÀY ĐỂ FIX LỖI ẨN BIỂU ĐỒ CỦA STREAMLIT
+import matplotlib
+matplotlib.use('TkAgg') 
+
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.ensemble import RandomForestRegressor
 import os
 
+# ==========================================
 # 1. ĐỌC DỮ LIỆU TỪ FILE CSV
+# ==========================================
 csv_path = 'results/traffic_data.csv'
 
 # Kiểm tra xem file đã tồn tại chưa
@@ -28,7 +35,9 @@ except KeyError:
     print(f"Các cột hiện có trong file của bạn là: {df.columns.tolist()}")
     exit()
 
+# ==========================================
 # 2. KHỞI TẠO VÀ HUẤN LUYỆN 3 MÔ HÌNH
+# ==========================================
 # Mô hình 1: Hồi quy tuyến tính (Baseline)
 model_linear = LinearRegression()
 model_linear.fit(X, y_thuc_te)
@@ -46,7 +55,9 @@ model_rf = RandomForestRegressor(n_estimators=100, random_state=42)
 model_rf.fit(X, y_thuc_te)
 y_pred_rf = model_rf.predict(X)
 
+# ==========================================
 # 3. VẼ BIỂU ĐỒ SO SÁNH
+# ==========================================
 plt.figure(figsize=(12, 6))
 
 # Vẽ điểm dữ liệu thực tế
