@@ -1,59 +1,89 @@
 from ultralytics import YOLO
 import os
+import glob
+
+def find_latest_best_pt(base_dir):
+    search_dirs = [
+        os.path.join(base_dir, "results"),
+        os.path.join(base_dir, "runs", "detect", "results"),
+    ]
+    candidates = []
+    for d in search_dirs:
+        if os.path.exists(d):
+            pattern = os.path.join(d, "traffic_model*", "weights", "best.pt")
+            candidates.extend(glob.glob(pattern))
+    if not candidates:
+        return None
+    candidates.sort(key=os.path.getmtime, reverse=True)
+    return candidates[0]
 
 def main():
-    # ==========================================
-    # 1. CẤU HÌNH ĐƯỜNG DẪN DỮ LIỆU
-    # ==========================================
-    # File data.yaml này sẽ có được sau khi bạn tải dataset từ Roboflow về
-    # Đảm bảo bạn giải nén dataset vào đúng thư mục 'data/dataset/'
-    data_yaml_path = 'data/dataset/data.yaml'
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    data_yaml_path = os.path.join(base_dir, "data", "dataset", "data.yaml")
 
+    # ==========================================
+    # 1. KIEM TRA DATA.YAML
+    # ==========================================
     if not os.path.exists(data_yaml_path):
-        print(f"❌ Lỗi: Không tìm thấy file {data_yaml_path}!")
-        print("Vui lòng tải Dataset từ Roboflow về, giải nén và đặt file data.yaml đúng vị trí.")
+        print(f"Loi: Khong tim thay file {data_yaml_path}!")
+        print("Vui long chay Buoc 2.5 tren Dashboard truoc.")
         return
 
     # ==========================================
-    # 2. KHỞI TẠO MÔ HÌNH
+    # 2. KHOI TAO MO HINH
+    # Tu dong chon: dung best.pt cu neu co (fine-tuning),
+    # neu khong moi dung yolov8n.pt (train moi)
     # ==========================================
-    # LƯU Ý: Lúc gán nhãn ta dùng bản X (rất nặng). 
-    # Nhưng lúc Train để chạy web real-time, ta dùng bản N (Nano) cho nhẹ và mượt.
-    print("⏳ Đang tải mô hình YOLOv8 Nano cơ bản...")
-    model = YOLO('yolov8n.pt')
+    latest_best = find_latest_best_pt(base_dir)
+
+    if latest_best:
+        print("=" * 50)
+        print("[Fine-tuning] Tim thay model cu:")
+        print(f"  {latest_best}")
+        print("AI se hoc them tren nen kien thuc cu, khong train lai tu dau.")
+        print("=" * 50)
+        model = YOLO(latest_best)
+        freeze_layers = 10
+    else:
+        print("=" * 50)
+        print("[Train moi] Khong tim thay model cu, bat dau tu yolov8n.pt")
+        print("=" * 50)
+        model = YOLO("yolov8n.pt")
+        freeze_layers = 0
 
     # ==========================================
-    # 3. TIẾN HÀNH HUẤN LUYỆN (TRAINING)
+    # 3. TIEN HANH HUAN LUYEN
+    # project dung duong dan tuyet doi -> YOLO luu vao DLCK/results/traffic_model*
+    # khong bi lap thanh runs/detect/runs/detect/results
     # ==========================================
-    print("🚀 BẮT ĐẦU HUẤN LUYỆN MÔ HÌNH...")
-    
-    # Bắt đầu quá trình học
-    results = model.train(
+    print("BAT DAU HUAN LUYEN MO HINH...")
+
+    model.train(
         data=data_yaml_path,
         epochs=50,
         imgsz=640,
-        batch=4,                # ✅ GIẢM TỪ 8 XUỐNG 4 (Để tiết kiệm RAM)
-        workers=1,              # ✅ THÊM DÒNG NÀY: Chặn YOLO tạo ra hàng chục luồng ngốn RAM
-        project='results',
-        name='traffic_model',
+        batch=4,
+        workers=1,
+        project="results",
+        name="traffic_model",
         plots=True,
-        device=''
+        device="0",
+        freeze=freeze_layers,
+        patience=10,
     )
 
     # ==========================================
-    # 4. KẾT THÚC VÀ HƯỚNG DẪN
+    # 4. KET THUC
     # ==========================================
-    print("\n" + "="*50)
-    print("✅ HUẤN LUYỆN HOÀN TẤT!")
-    print("👉 Trọng số AI tốt nhất của bạn đã được lưu tại:")
-    print("   results/traffic_model/weights/best.pt")
-    print("="*50)
-    print("HƯỚNG DẪN BƯỚC TIẾP THEO:")
-    print("1. Copy file 'best.pt' trong thư mục trên ra ngoài thư mục gốc của dự án (nằm chung với thư mục src).")
-    print("2. Mở file '3_detect_track.py' và '5_app_dashboard.py', tìm dòng:")
-    print("   model = YOLO('yolov8n.pt')")
-    print("   -> Sửa thành: model = YOLO('best.pt')")
+    new_best = find_latest_best_pt(base_dir)
+    print("=" * 50)
+    print("HUAN LUYEN HOAN TAT!")
+    if new_best:
+        print("Trong so tot nhat luu tai:")
+        print(f"  {new_best}")
+    print("=" * 50)
+    print("Mo Dashboard va bat dau Test Video hoac Live Camera.")
+    print("App se tu dong tim va dung best.pt moi nhat - khong can sua gi them.")
 
-# Bắt buộc phải có cấu trúc này trên Windows khi chạy thư viện có multiprocessing như YOLO
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

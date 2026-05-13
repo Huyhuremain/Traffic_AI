@@ -83,3 +83,6 @@ with open(yaml_path, 'w', encoding='utf-8') as f:
 print(f"[OK] Created: {yaml_path}")
 print("-" * 40)
 print("[OK] Dataset ready! Now press 'Bat dau Huan luyen' on dashboard.")
+
+#.\venv\Scripts\activate
+#streamlit run src/5_app_dashboard.py

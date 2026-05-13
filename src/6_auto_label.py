@@ -48,7 +48,7 @@ for img_name in images:
     img_path   = os.path.join(image_dir, img_name)
     label_path = os.path.join(label_dir, img_name.rsplit('.', 1)[0] + '.txt')
 
-    results = model(img_path, classes=[0, 1, 2, 3, 5, 7])
+    results = model(img_path, classes=[0, 1, 2, 3, 5, 7], conf=0.15)
 
     # ✅ Chỉ lấy kết quả đầu tiên, tránh ghi đè
     r = results[0]
