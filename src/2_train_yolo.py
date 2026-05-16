@@ -60,7 +60,7 @@ def main():
 
     model.train(
         data=data_yaml_path,
-        epochs=50,
+        epochs=30,
         imgsz=640,
         batch=4,
         workers=1,
@@ -69,7 +69,7 @@ def main():
         plots=True,
         device="0",
         freeze=freeze_layers,
-        patience=10,
+        patience=15,
     )
 
     # ==========================================

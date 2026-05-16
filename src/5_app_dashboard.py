@@ -255,7 +255,7 @@ with st.sidebar.expander("3. Huan Luyen AI", expanded=False):
             with st.spinner("Dang chay huan luyen..."):
                 result = run_script("2_train_yolo.py")
             if result.returncode == 0:
-                st.success("Xong! Trong so luu tai runs/detect/results/traffic_model/weights/best.pt")
+                st.success("Xong! App se tu dong tim va dung best.pt moi nhat.")
             else:
                 st.error(f"Loi:\n{result.stderr}")
 
@@ -287,14 +287,26 @@ if "run_test" not in st.session_state:
 
 @st.cache_resource
 def load_model():
-    p1 = os.path.join(BASE_DIR, "runs", "detect", "results", "traffic_model", "weights", "best.pt")
-    p2 = os.path.join(BASE_DIR, "best.pt")
-    if os.path.exists(p1):
-        st.sidebar.success("Model: runs/detect/results/traffic_model/weights/best.pt")
-        return YOLO(p1)
-    if os.path.exists(p2):
+    import glob
+    search_dirs = [
+        os.path.join(BASE_DIR, "results"),
+        os.path.join(BASE_DIR, "runs", "detect", "results"),
+    ]
+    candidates = []
+    for d in search_dirs:
+        if os.path.exists(d):
+            pattern = os.path.join(d, "traffic_model*", "weights", "best.pt")
+            candidates.extend(glob.glob(pattern))
+    if candidates:
+        candidates.sort(key=os.path.getmtime, reverse=True)
+        best = candidates[0]
+        rel = os.path.relpath(best, BASE_DIR)
+        st.sidebar.success(f"Model: {rel}")
+        return YOLO(best)
+    root_pt = os.path.join(BASE_DIR, "best.pt")
+    if os.path.exists(root_pt):
         st.sidebar.success("Model: best.pt (thu muc goc)")
-        return YOLO(p2)
+        return YOLO(root_pt)
     st.sidebar.warning("Khong tim thay best.pt - dung YOLOv8n mac dinh.")
     return YOLO("yolov8n.pt")
 
