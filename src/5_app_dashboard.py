@@ -265,7 +265,9 @@ if st.session_state["run_test"]:
 
         pc = bc = cc = mc = bsc = tc = 0
         total_pc = total_bc = total_cc = total_mc = total_bsc = total_tc = 0
-        seen_ids = set()
+        seen_ids  = set()
+        fps_list  = []          # Luu FPS tung frame de tinh trung binh
+        t_frame   = time.time() # Thoi gian frame truoc
 
         while cap_test.isOpened() and st.session_state["run_test"]:
             ret, frame = cap_test.read()
@@ -276,15 +278,21 @@ if st.session_state["run_test"]:
                 min(frame_idx / max(n_frames, 1), 1.0),
                 text=f"Dang xu ly... {int(frame_idx/max(n_frames,1)*100)}%"
             )
-            if frame_idx % 3 != 0:
-                continue
+            # Tinh FPS thuc te
+            now_f   = time.time()
+            fps     = int(1 / (now_f - t_frame)) if (now_f - t_frame) > 0 else 0
+            t_frame = now_f
+            fps_list.append(fps)
+            avg_fps = sum(fps_list) / len(fps_list)
 
+            # Luon track moi frame de tracker khong mat dau xe (persist=True)
             results = model.track(frame, classes=[0, 1, 2, 3, 5, 7],
                                   conf=test_conf, persist=True, verbose=False)
             (frame, pc, bc, cc, mc, bsc, tc,
              total_pc, total_bc, total_cc, total_mc, total_bsc, total_tc) = process_tracking(
                 results, seen_ids, pc, bc, cc, mc, bsc, tc,
-                total_pc, total_bc, total_cc, total_mc, total_bsc, total_tc
+                total_pc, total_bc, total_cc, total_mc, total_bsc, total_tc,
+                fps=fps, avg_fps=avg_fps
             )
             if frame is None:
                 continue
@@ -292,12 +300,16 @@ if st.session_state["run_test"]:
             current_total = bc + cc + mc + bsc + tc
             grand_total   = total_bc + total_cc + total_mc + total_bsc + total_tc
 
-            ph_frame.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
-                           channels="RGB", use_container_width=True)
-            ph_kpi.markdown(kpi_table(
-                cc, mc, bsc, tc, bc, pc, current_total,
-                total_cc, total_mc, total_bsc, total_tc, total_bc, total_pc, grand_total
-            ))
+            # Chi cap nhat UI moi 3 frame de giam lag Streamlit
+            # Tracker van nhan du frame nen khong mat dau xe
+            if frame_idx % 3 == 0:
+                ph_frame.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
+                               channels="RGB", use_container_width=True)
+                ph_kpi.markdown(kpi_table(
+                    cc, mc, bsc, tc, bc, pc, current_total,
+                    total_cc, total_mc, total_bsc, total_tc, total_bc, total_pc,
+                    grand_total, fps=fps, avg_fps=avg_fps
+                ))
 
             now = time.time()
             if now - t_log >= LOG_INTERVAL:
@@ -364,6 +376,14 @@ if st.session_state["run_test"]:
                            int(df_final["Total_Vehicles"].max()))
                 r2b.metric("Thap nhat / chu ky",
                            int(df_final["Total_Vehicles"].min()))
+                if fps_list:
+                    st.markdown("**Hieu nang xu ly (FPS):**")
+                    f1, f2, f3 = st.columns(3)
+                    f1.metric("FPS trung binh", f"{sum(fps_list)/len(fps_list):.1f}")
+                    f2.metric("FPS cao nhat",   max(fps_list))
+                    f3.metric("FPS thap nhat",  min(fps_list))
+                    perf = "Real-time" if sum(fps_list)/len(fps_list) >= 20 else                            "Chap nhan duoc" if sum(fps_list)/len(fps_list) >= 10 else                            "Can toi uu them"
+                    st.caption(f"Danh gia hieu nang: {perf} (>= 20 FPS: Real-time | 10-20: OK | < 10: Cham)")
         else:
             st.warning("Video qua ngan hoac khong phat hien duoc phuong tien nao.")
 
@@ -407,7 +427,9 @@ elif run_system:
         frame_idx    = 0
         pc = bc = cc = mc = bsc = tc = 0
         total_pc = total_bc = total_cc = total_mc = total_bsc = total_tc = 0
-        seen_ids = set()
+        seen_ids  = set()
+        fps_list  = []
+        t_frame   = time.time()
 
         while cap.isOpened() and run_system:
             ret, frame = cap.read()
@@ -419,15 +441,21 @@ elif run_system:
                     cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                     continue
             frame_idx += 1
-            if frame_idx % 3 != 0:
-                continue
+            # Tinh FPS thuc te
+            now_f   = time.time()
+            fps     = int(1 / (now_f - t_frame)) if (now_f - t_frame) > 0 else 0
+            t_frame = now_f
+            fps_list.append(fps)
+            avg_fps = sum(fps_list) / len(fps_list)
 
+            # Luon track moi frame de tracker khong mat dau xe (persist=True)
             results = model.track(frame, classes=[0, 1, 2, 3, 5, 7],
                                   conf=test_conf, persist=True, verbose=False)
             (frame, pc, bc, cc, mc, bsc, tc,
              total_pc, total_bc, total_cc, total_mc, total_bsc, total_tc) = process_tracking(
                 results, seen_ids, pc, bc, cc, mc, bsc, tc,
-                total_pc, total_bc, total_cc, total_mc, total_bsc, total_tc
+                total_pc, total_bc, total_cc, total_mc, total_bsc, total_tc,
+                fps=fps, avg_fps=avg_fps
             )
             if frame is None:
                 continue
@@ -435,12 +463,16 @@ elif run_system:
             current_total = bc + cc + mc + bsc + tc
             grand_total   = total_bc + total_cc + total_mc + total_bsc + total_tc
 
-            ph_frame.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
-                           channels="RGB", use_container_width=True)
-            ph_kpi.markdown(kpi_table(
-                cc, mc, bsc, tc, bc, pc, current_total,
-                total_cc, total_mc, total_bsc, total_tc, total_bc, total_pc, grand_total
-            ))
+            # Chi cap nhat UI moi 3 frame de giam lag Streamlit
+            # Tracker van nhan du frame nen khong mat dau xe
+            if frame_idx % 3 == 0:
+                ph_frame.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB),
+                               channels="RGB", use_container_width=True)
+                ph_kpi.markdown(kpi_table(
+                    cc, mc, bsc, tc, bc, pc, current_total,
+                    total_cc, total_mc, total_bsc, total_tc, total_bc, total_pc,
+                    grand_total, fps=fps, avg_fps=avg_fps
+                ))
 
             now = time.time()
             if now - t_log >= LOG_INTERVAL:

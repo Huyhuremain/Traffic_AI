@@ -41,7 +41,6 @@ print("-" * 40)
 # Sử dụng yolov8x.pt (bản Extra Large) để tăng tối đa độ chính xác gán nhãn
 print("[INFO] Đang tải mô hình YOLOv8x.pt (Extra Large) - Có thể mất chút thời gian...")
 model = YOLO('yolov8x.pt')
-
 success_count = 0
 skip_count    = 0
 force_truck_count = 0 # Đếm số lượng nhãn được ép thành Truck
@@ -63,7 +62,8 @@ for img_name in images:
 
     # Lưu file txt gốc từ YOLO
     r.save_txt(label_path)
-    
+
+
     # ---------------------------------------------------------
     # KỸ THUẬT ÉP NHÃN (RULE-BASED FORCING)
     # ---------------------------------------------------------
@@ -72,7 +72,7 @@ for img_name in images:
         if os.path.exists(label_path):
             with open(label_path, 'r') as f:
                 lines = f.readlines()
-            
+
             new_lines = []
             for line in lines:
                 parts = line.strip().split()
@@ -85,7 +85,7 @@ for img_name in images:
                         is_forced = True
                         force_truck_count += 1
                 new_lines.append(" ".join(parts) + "\n")
-            
+
             # Ghi đè lại file txt bằng nhãn đã sửa
             if is_forced:
                 with open(label_path, 'w') as f:

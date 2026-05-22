@@ -158,10 +158,14 @@ def draw_pie_chart(car, moto, bus, truck, bicycle, person):
 # HAM HIEN THI KPI
 # ==========================================
 def kpi_table(car, moto, bus, truck, bicycle, person, current_total,
-              total_car, total_moto, total_bus, total_truck, total_bicycle, total_person, grand_total):
-    """Tao bang KPI hien thi so xe tuc thoi va tich luy."""
+              total_car, total_moto, total_bus, total_truck, total_bicycle, total_person,
+              grand_total, fps=0, avg_fps=0):
+    """Tao bang KPI hien thi so xe tuc thoi, tich luy va FPS."""
+    fps_color = "green" if fps >= 20 else ("orange" if fps >= 10 else "red")
     return (
-        f"**Hien tai (trong khung hinh):** {current_total} phuong tien\n\n"
+        f"**Hien tai (trong khung hinh):** {current_total} phuong tien"
+        f" &nbsp;|&nbsp; :{'green' if fps >= 20 else 'orange' if fps >= 10 else 'red'}[**FPS: {fps}**]"
+        f" &nbsp;|&nbsp; TB: {avg_fps:.1f} FPS\n\n"
         f"| Xe hoi | Mo to | Xe buyt | Xe tai | Xe dap | Nguoi |\n"
         f"|:------:|:-----:|:-------:|:------:|:------:|:-----:|\n"
         f"| {car} | {moto} | {bus} | {truck} | {bicycle} | {person} |\n\n"
@@ -176,13 +180,31 @@ def kpi_table(car, moto, bus, truck, bicycle, person, current_total,
 # ==========================================
 # HAM XU LY TRACKING
 # ==========================================
+def draw_fps_overlay(frame, fps, avg_fps):
+    """Ve FPS len goc tren ben phai cua frame (overlay)."""
+    import cv2 as _cv2
+    h, w = frame.shape[:2]
+    fps_text  = f"FPS: {fps}"
+    avg_text  = f"AVG: {avg_fps:.1f}"
+    color     = (0, 255, 0) if fps >= 20 else ((0, 165, 255) if fps >= 10 else (0, 0, 255))
+    font      = _cv2.FONT_HERSHEY_SIMPLEX
+    # Ve nen mo
+    _cv2.rectangle(frame, (w - 160, 8), (w - 8, 58), (0, 0, 0), -1)
+    _cv2.rectangle(frame, (w - 160, 8), (w - 8, 58), color, 1)
+    _cv2.putText(frame, fps_text, (w - 152, 32), font, 0.7, color, 2)
+    _cv2.putText(frame, avg_text, (w - 152, 52), font, 0.5, (200, 200, 200), 1)
+    return frame
+
+
 def process_tracking(results, seen_ids,
                      pc, bc, cc, mc, bsc, tc,
-                     total_pc, total_bc, total_cc, total_mc, total_bsc, total_tc):
+                     total_pc, total_bc, total_cc, total_mc, total_bsc, total_tc,
+                     fps=0, avg_fps=0):
     """
     Xu ly ket qua tracking:
     - Dem tuc thoi: so xe trong khung hinh tai frame hien tai
     - Dem tich luy: chi tinh xe co track_id chua tung xuat hien
+    - Ve FPS overlay len goc tren phai frame
     """
     frame = None
     pc = bc = cc = mc = bsc = tc = 0
@@ -207,5 +229,8 @@ def process_tracking(results, seen_ids,
                     elif cls == 5: total_bsc += 1
                     elif cls == 7: total_tc  += 1
         frame = r.plot()
+    # Ve FPS overlay len frame
+    if frame is not None and fps > 0:
+        frame = draw_fps_overlay(frame, fps, avg_fps)
     return (frame, pc, bc, cc, mc, bsc, tc,
             total_pc, total_bc, total_cc, total_mc, total_bsc, total_tc)
